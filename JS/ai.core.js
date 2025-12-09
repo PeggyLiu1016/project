@@ -3,7 +3,7 @@
 // ==========================================
 
 // 1. 連線設定 (請填入您的 API Key 或 Backend URL)
-const BACKEND_URL = "https://project-kappa-ten-15.vercel.app/api/chat";
+//const BACKEND_URL = "https://project-kappa-ten-15.vercel.app/api/chat";
 const TEMP_API_KEY = "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"; 
 
 // 2. 角色個性化開場白對照表
