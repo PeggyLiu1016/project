@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>True or Fauxship - 防詐騙模擬遊戲</title>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="FirstHalf.css" rel="stylesheet">
+</head>
+<body>
+
+        <!--  背景音樂 (設定 loop 循環播放) -->
+    <audio id="bgMusic" loop>
+        <source src="audio/main.mp3" type="audio/mpeg">
+        您的瀏覽器不支援 audio 標籤。
+    </audio>
+
+    <!--  按鈕點擊音效 -->
+    <audio id="clickSound">
+        <source src="audio/button_click.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- ================= 1. 首頁 ================= -->
+    <div id="scene-home" class="scene active">
+        <button class="start-button" onclick="goToScene('scene-disclaimer')"> 
+            <span>遊戲</span>
+            <span>開始</span>
+            <img src="All_assets/按鈕.png" alt="開始按鈕" />
+        </button>
+    </div>
+
+    <!-- ================= 2. 聲明 ================= -->
+    <div id="scene-disclaimer" class="scene">
+        <div class="content-box">
+            <h1>遊戲聲明</h1>
+            <p>
+注意！本作品為教育虛擬互動模擬遊戲，內容涉及詐騙情境，
+僅做為學習與防詐用途，絕無贊同詐騙之意思。
+
+請玩家評估自身狀態後再進入遊戲，並在體驗結束後反思如何於現實中避免受騙。
+            </p>
+            <button class="next-btn-text" onclick="goToScene('scene-intro-video')">我瞭解了</button>
+        </div>
+    </div>
+
+    <!-- ================= 3. 開頭動畫 ================= -->
+    <div id="scene-intro-video" class="scene">
+        <video id="intro-video-player" playsinline>
+            <source src="All_assets/2開頭動畫.mp4" type="video/mp4">
+            您的瀏覽器不支援影片標籤。
+        </video>
+        <button class="skip-btn" onclick="goToScene('scene-name-input')">跳過動畫</button>
+    </div>
+
+    <!-- ================= 4. 名字輸入 ================= -->
+    <div id="scene-name-input" class="scene">
+        <div class="container">
+            <div class="input-bar">
+                <!-- 加入 oninput 事件直接監聽輸入 -->
+                <input type="text" id="player-name" placeholder="請輸入名字" oninput="checkNameInput()" />
+            </div>
+        </div>
+        <button class="nav-btn left" onclick="goToScene('scene-intro-video')">上一頁</button>
+        <!-- 修改：加入 id 和 hidden-btn -->
+        <button id="btn-next-name" class="nav-btn right hidden-btn" onclick="validateName()">下一頁</button>
+    </div>
+
+    <!-- ================= 5. 詐騙方式選擇 ================= -->
+    <div id="scene-scam-choice" class="scene">
+        <h1 class="scam-title">請選擇詐騙方式</h1>
+
+        <div class="scam-options">
+            <button class="scam-btn" onclick="selectScam(this, '假投資')">
+                <img src="All_assets/按鈕.png" alt="假投資" />
+                <span>假投資</span>
+            </button>
+            <button class="scam-btn" onclick="selectScam(this, '假網購')">
+                <img src="All_assets/按鈕.png" alt="假網購" />
+                <span>假網購</span>
+            </button>
+            <button class="scam-btn" onclick="selectScam(this, '假中獎')">
+                <img src="All_assets/按鈕.png" alt="假中獎" />
+                <span>假中獎</span>
+            </button>
+        </div>
+
+        <button class="nav-btn left" onclick="goToScene('scene-name-input')">上一頁</button>
+        <!-- 修改：加入 id 和 hidden-btn -->
+        <button id="btn-next-scam" class="nav-btn right hidden-btn" onclick="validateScam()">下一頁</button>
+    </div>
+
+    <!-- ================= 6. 角色選擇 ================= -->
+    <div id="scene-char-select" class="scene">
+        <div class="right-sidebar">
+            <div class="info-box-wrapper">
+                <img src="All_assets/6簡介匡.png" alt="角色簡介背景" class="info-box-background">
+                <div class="info-content" id="characterInfoContent">
+                    <!-- JS 生成內容 -->
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="character-selector">
+                <div class="sidebar left-sidebar"></div>
+                <div class="center-area">
+                    <h1 class="title">請選擇角色</h1>
+                    <div class="character-and-controls">
+                        <button class="control-button side-btn" id="prevCharacterBtn" onclick="navigateCharacter(-1)">
+                            <img src="All_assets/6按鈕左.png" alt="上一個角色">
+                        </button>
+                        <img src="All_assets/6阿明.PNG" alt="當前角色：阿明" class="character-image" id="currentCharacterImage">
+                        <button class="control-button side-btn" id="nextCharacterBtn_Simulated" onclick="navigateCharacter(1)">
+                            <img src="All_assets/6按鈕右.png" alt="下一個角色">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="nav-btn left" id="prevPageBtn" onclick="goToScene('scene-scam-choice')">上一頁</button>
+        <!-- 修改：本來就有 id，加入 hidden-btn -->
+        <button class="nav-btn right hidden-btn" id="nextPageBtn" onclick="goToScene('scene-mission')">下一頁</button>
+    </div>
+
+    <!-- ================= 6.5 任務說明 ================= -->
+    <div id="scene-mission" class="scene">
+        <div class="content-box">
+            <h1>任務說明</h1>
+            <p id="mission-text">
+                任務載入中...
+            </p>
+            <button class="next-btn-text" onclick="goToScene('scene-outro-anim')">開始模擬</button>
+        </div>
+    </div>
+
+    <!-- ================= 7. 過場 (結束 GIF) ================= -->
+    <div id="scene-outro-anim" class="scene scene-outro-anim">
+        <img src="All_assets/7過場.gif" alt="過場動畫">
+    </div>
+
+    <script src="JS/audio.js"></script>
+    <script src="JS/FirstHalf.js"></script>
+</body>
+</html>

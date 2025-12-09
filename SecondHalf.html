@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fauxship - 遊戲模擬 & 防詐宣導</title>
+    
+    <!-- 引入 FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- 引入 Tailwind CSS (用於宣導頁面) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="SecondHalf.css" rel="stylesheet">
+</head>
+<body>
+
+            <!--  背景音樂 (設定 loop 循環播放) -->
+    <audio id="bgMusic" loop>
+        <source src="audio/main.mp3" type="audio/mpeg">
+        您的瀏覽器不支援 audio 標籤。
+    </audio>
+
+    <!--  按鈕點擊音效 -->
+    <audio id="clickSound">
+        <source src="audio/button_click.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- =========================================
+         視圖 1: 遊戲主畫面 (test2.html)
+         ========================================= -->
+    <div id="view-game" class="spa-view active">
+        <!-- 遮罩與特效 -->
+        <div id="tutorial-overlay"></div>
+        <div id="spotlight-effect"></div>
+        <div class="tutorial-tooltip" id="tooltip">提示文字</div>
+        
+        <!-- 任務彈窗 -->
+        <div id="mission-modal" class="mission-modal">
+            <div class="mission-container">
+                <img src="All_assets/8任務說明框.png" class="mission-bg" alt="任務說明框">
+                <div class="mission-text">
+                    <h3>任務目標</h3>
+                    <p>任務載入中...</p>
+                    <p style="font-size: 0.8em; margin-top: 10px; color: #888;">(點擊任意處關閉)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結局/結算彈窗 (遊戲內) -->
+        <div class="modal" id="end-modal">
+            <h2>模擬結束</h2>
+            <p>結算中...</p>
+            <p style="font-size: 0.9rem; color: #999; margin-top: 10px;"></p>
+        </div>
+
+        <!-- 遊戲主要佈局 -->
+        <div class="app-container">
+            <!-- 上方標題 -->
+            <div class="window-title">訊息</div>
+            
+            <!-- Header -->
+            <div class="header-cell header-left">私人訊息</div>
+            <div class="header-cell header-main">
+                <div class="header-title-group">
+                    <div class="header-name" id="target-name">阿明</div>
+                    <div class="icon-wrapper" id="target-bulb">
+                        <img src="All_assets/8lamp.png" alt="提示燈" style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                </div>
+                <div class="header-stats">
+                    <div id="target-rounds">回合數：1/10</div>
+                    <div id="target-score">信任值：40</div>
+                </div>
+            </div>
+            <div class="header-cell header-right">素材區</div>
+            
+            <!-- 左側邊欄 -->
+            <div class="sidebar-left">
+                <div class="contact-item active">
+                    <div class="avatar" style="background-image: url('All_assets/8阿明.PNG');"></div>
+                    <div class="contact-name">阿明</div>
+                </div>
+            </div>
+            
+            <!-- 中間聊天區 -->
+            <div class="chat-area">
+                <div class="messages-list">
+                    <!-- 訊息將由 JS 動態生成 -->
+                </div>
+                <div class="input-area" id="target-input">
+                    <div class="input-box">
+                        <!-- JS 填充 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右側邊欄 -->
+            <div class="sidebar-right" id="target-materials">
+                <div class="material-square"></div>
+                <!-- 這裡的 material-item 將由 JS initDragAndDrop 填入內容 -->
+                <div class="material-item"></div>
+                <div class="material-item"></div>
+                <div class="material-item"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         視圖 2: 成功頁面 (success.html)
+         ========================================= -->
+    <div id="view-success" class="spa-view">
+        <div class="end-view-background">
+            <div class="content-box-end">
+                <h1>你成功了</h1>
+                <p>
+                    謊言奏效了，獵物陷入圈套
+                    對我而言是勝利，對他而言卻是災難
+                </p>
+                <!-- 修改：按鈕觸發影片播放序列 -->
+                <button class="next-button" onclick="startEducationSequence()"> 
+                    <span>下一頁</span>
+                    <img src="All_assets/按鈕.png" alt="按鈕" />
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         視圖 3: 失敗頁面 (failure.html)
+         ========================================= -->
+    <div id="view-failure" class="spa-view">
+        <div class="end-view-background">
+            <div class="content-box-end">
+                <h1>你失敗了</h1>
+                <p>
+                    謊言沒能奏效，獵物全身而退
+                    對我而言是失敗，對他而言卻是幸運
+                </p>
+                <!-- 修改：按鈕觸發影片播放序列 -->
+                <button class="next-button" onclick="startEducationSequence()"> 
+                    <span>下一頁</span>
+                    <img src="All_assets/按鈕.png" alt="按鈕" />
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         視圖 4: 防詐騙宣導頁面 (Education)
+         ========================================= -->
+    <div id="view-education" class="spa-view bg-[#EBE4D5] flex-col items-center py-10 px-4 font-sans relative">
+        <!-- 頁面標題區塊 -->
+        <header class="text-center mb-12 space-y-2 flex-shrink-0">
+            <h1 class="text-[#5D4037] text-xl md:text-3xl font-bold">
+                謝謝您體驗我們的遊戲。
+            </h1>
+            <h2 class="text-[#5D4037] text-lg md:text-2xl font-bold">
+                我們還準備了其他防詐騙的宣導影片，歡迎觀看！
+            </h2>
+        </header>
+
+        <!-- 主要內容區塊 -->
+        <main class="w-full max-w-4xl space-y-12 flex-grow">
+            
+            <!-- === 科普區塊 === -->
+            <div class="w-full mb-8">
+                <!-- 標題與虛線 -->
+                <div class="flex items-center mb-6">
+                    <h2 class="text-[#5D4037] text-2xl md:text-3xl font-bold whitespace-nowrap mr-4">
+                        科普
+                    </h2>
+                    <div class="flex-grow h-px border-b-4 border-[#C8BFA9] border-dotted translate-y-2"></div>
+                </div>
+
+                <!-- 按鈕網格 -->
+                <div class="grid grid-cols-3 gap-4 md:gap-12 justify-items-center px-4 md:px-12">
+                    
+                    <!-- 按鈕 1：科普 - 假投資 -->
+                    <button onclick="playVideo('All_assets/結尾動畫/假投資科普.mp4')" class="raccoon-btn group relative flex items-center justify-center transition-transform transform hover:scale-105 active:scale-95 focus:outline-none">
+                        <img src="All_assets/按鈕.png" alt="假投資" 
+                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#8D6E63';"
+                             class="w-full h-full object-contain drop-shadow-lg relative z-10">
+                        <span class="absolute inset-0 flex items-center justify-center text-white text-xl md:text-2xl font-bold tracking-widest pt-2 z-20 pointer-events-none">
+                            假投資
+                        </span>
+                    </button>
+
+                    <!-- 按鈕 2：科普 - 假網購 -->
+                    <button onclick="playVideo('All_assets/結尾動畫/假網購科普.mp4')" class="raccoon-btn group relative flex items-center justify-center transition-transform transform hover:scale-105 active:scale-95 focus:outline-none">
+                        <img src="All_assets/按鈕.png" alt="假網購" 
+                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#8D6E63';"
+                             class="w-full h-full object-contain drop-shadow-lg relative z-10">
+                        <span class="absolute inset-0 flex items-center justify-center text-white text-xl md:text-2xl font-bold tracking-widest pt-2 z-20 pointer-events-none">
+                            假網購
+                        </span>
+                    </button>
+
+                    <!-- 按鈕 3：科普 - 假中獎 -->
+                    <button onclick="playVideo('All_assets/結尾動畫/假中獎科普.mp4')" class="raccoon-btn group relative flex items-center justify-center transition-transform transform hover:scale-105 active:scale-95 focus:outline-none">
+                        <img src="All_assets/按鈕.png" alt="假中獎" 
+                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#8D6E63';"
+                             class="w-full h-full object-contain drop-shadow-lg relative z-10">
+                        <span class="absolute inset-0 flex items-center justify-center text-white text-xl md:text-2xl font-bold tracking-widest pt-2 z-20 pointer-events-none">
+                            假中獎
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- === 預防區塊 === -->
+            <div class="w-full mb-8">
+                <div class="flex items-center mb-6">
+                    <h2 class="text-[#5D4037] text-2xl md:text-3xl font-bold whitespace-nowrap mr-4">
+                        預防
+                    </h2>
+                    <div class="flex-grow h-px border-b-4 border-[#C8BFA9] border-dotted translate-y-2"></div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 md:gap-12 justify-items-center px-4 md:px-12">
+                    <!-- 按鈕 4：預防 - 假投資 -->
+                    <button onclick="playVideo('All_assets/結尾動畫/假投資預防.mp4')" class="raccoon-btn group relative flex items-center justify-center transition-transform transform hover:scale-105 active:scale-95 focus:outline-none">
+                        <img src="All_assets/按鈕.png" alt="假投資" 
+                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#8D6E63';"
+                             class="w-full h-full object-contain drop-shadow-lg relative z-10">
+                        <span class="absolute inset-0 flex items-center justify-center text-white text-xl md:text-2xl font-bold tracking-widest pt-2 z-20 pointer-events-none">
+                            假投資
+                        </span>
+                    </button>
+
+                    <!-- 按鈕 5：預防 - 假網購 -->
+                    <button onclick="playVideo('All_assets/結尾動畫/假網購預防.mp4')" class="raccoon-btn group relative flex items-center justify-center transition-transform transform hover:scale-105 active:scale-95 focus:outline-none">
+                        <img src="All_assets/按鈕.png" alt="假網購" 
+                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#8D6E63';"
+                             class="w-full h-full object-contain drop-shadow-lg relative z-10">
+                        <span class="absolute inset-0 flex items-center justify-center text-white text-xl md:text-2xl font-bold tracking-widest pt-2 z-20 pointer-events-none">
+                            假網購
+                        </span>
+                    </button>
+
+                    <!-- 按鈕 6：預防 - 假中獎 -->
+                    <button onclick="playVideo('All_assets/結尾動畫/假中獎預防.mp4')" class="raccoon-btn group relative flex items-center justify-center transition-transform transform hover:scale-105 active:scale-95 focus:outline-none">
+                        <img src="All_assets/按鈕.png" alt="假中獎" 
+                             onerror="this.style.display='none'; this.parentElement.style.backgroundColor='#8D6E63';"
+                             class="w-full h-full object-contain drop-shadow-lg relative z-10">
+                        <span class="absolute inset-0 flex items-center justify-center text-white text-xl md:text-2xl font-bold tracking-widest pt-2 z-20 pointer-events-none">
+                            假中獎
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- === 右下角固定按鈕 (回首頁/重置遊戲) === -->
+       <div class="fixed bottom-6 right-6 z-50">
+            <!-- 注意：請將 'index.html' 替換為您實際的檔案名稱 -->
+            <button onclick="window.location.href='FirstHalf.html'" class="fixed-btn raccoon-btn group relative flex items-center justify-center transition-transform transform hover:scale-110 active:scale-95 focus:outline-none" title="回首頁">
+                <img src="All_assets/按鈕回封面-01.png" alt="回首頁" class="w-full h-full object-contain drop-shadow-2xl relative z-10">
+            </button>
+        </div>
+
+    </div>
+
+    <!-- =========================================
+         全域組件: 全螢幕影片播放器
+         (修正：移出 view-education，改為 body 的直接子元素，解決 display:none 導致有聲音沒畫面的問題)
+         ========================================= -->
+    <div id="videoModal" class="hidden fixed inset-0 z-[9999] bg-black flex-col items-center justify-center">
+        
+        <!-- 關閉按鈕 -->
+        <button onclick="closeVideo()" class="absolute top-6 right-6 text-white/70 hover:text-white bg-black/50 rounded-full p-2 transition z-[10000] backdrop-blur-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        
+        <!-- 影片本體 -->
+        <video id="fullscreenVideo" controls playsinline class="w-full h-full object-cover outline-none bg-black">
+            <source src="" type="video/mp4">
+            您的瀏覽器不支援影片播放，請下載影片觀看。
+        </video>
+    </div>
+
+    <!-- 引用 AI 核心 (維持原路徑) -->
+    <script src="JS/audio.js"></script>
+    <script src="JS/DemoConfig.js"></script>
+    <script src="JS/ai.core.js"></script>
+    <script src="JS/SecondHalf.js"></script>
+
+</body>
+</html>

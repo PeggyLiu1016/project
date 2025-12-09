@@ -1,0 +1,619 @@
+@charset "utf-8";
+/* 定義字體 */
+@font-face {
+    font-family: 'MyCuteFont';  /* 這是您幫字體取的代號，可以隨意取名 */
+    src: url('font/SentyWatermelon.ttf') format('truetype'); /* 檔案的相對路徑 */
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    /* 優先使用 MyCuteFont，如果載入失敗則使用系統預設的無襯線字體 */
+    font-family: 'MyCuteFont', sans-serif; 
+}
+
+        /* ================= 全域設定 ================= */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* 防止捲動 */
+            font-family: 'MyCuteFont', 'Microsoft JhengHei', sans-serif;
+            background-color: #b6a780; /* 預設背景色 */
+        }
+                /* ★ 修正重點：強制表單元素也套用字體 ★
+           瀏覽器預設不會讓 button, input 等元素繼承 body 的字體，必須明確指定。
+        */
+        button, input, textarea, select {
+            font-family: 'MyCuteFont', 'Microsoft JhengHei', sans-serif;
+        }
+
+        /* 每一頁都預設為隱藏，透過 .active 類別來顯示 */
+        .scene {
+            display: none; /* 預設隱藏 */
+            width: 100%;
+            height: 100vh;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative; /* 關鍵：讓內部的 absolute 元素相對於此定位 */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 只有擁有 .active 的 scene 才會顯示 */
+        .scene.active {
+            display: flex;
+        }
+
+        /* ================= 1. 首頁樣式 (修正版) ================= */
+        #scene-home {
+            /* 確保背景圖片路徑正確，若圖片掛掉會顯示灰色背景 */
+            background-image: url("All_assets/1改版封面.GIF");
+            background-color: #dcd4c0; 
+        }
+
+        #scene-home .start-button {
+            position: absolute;
+            /* 修改重點：改為正值，確保按鈕在畫面內 */
+            bottom: 50px; 
+            right: 50px;
+            
+            width: 400px;
+            height: 400px;
+            background-color: rgba(255, 255, 255, 0); /* 暫時增加半透明背景以利辨識 */
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            z-index: 10; /* 確保按鈕在最上層 */
+        }
+
+        #scene-home .start-button img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        #scene-home .start-button span {
+            position: relative;
+            z-index: 1;
+            color: white;
+            font-size: 45px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); /* 加強陰影讓文字更清楚 */
+            pointer-events: none;
+        }
+
+        #scene-home .start-button:hover { transform: scale(1.05); }
+        #scene-home .start-button:active { transform: scale(1.1); }
+
+        @media (max-width: 1024px) {
+            #scene-home .start-button { 
+                width: 500px; 
+                height: 500px; 
+                bottom: 30px; /* 修正 */
+                right: 20px; 
+            }
+            #scene-home .start-button span { font-size: 40px; }
+        }
+        @media (max-width: 600px) {
+            #scene-home .start-button { 
+                width: 300px; 
+                height: 300px; 
+                bottom: 20px; /* 修正 */
+                right: 10px; 
+            }
+            #scene-home .start-button span { font-size: 24px; }
+        }
+
+        /* ================= 3. 開頭動畫 (MP4) 樣式 ================= */
+        #scene-intro-video {
+            background-color: #000;
+            padding: 0;
+        }
+        
+        #intro-video-player {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .skip-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 10;
+        }
+        .skip-btn:hover { background: rgba(255, 255, 255, 0.8); }
+
+        /* ================= 2. 聲明樣式 ================= */
+        #scene-disclaimer {
+            background-image: url('All_assets/3聲明背景.jpg');
+        }
+        
+        #scene-disclaimer .content-box {
+            border-radius: 0;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #scene-disclaimer h1 {
+            color: #8d2d2d;
+            font-size: 3.8em;
+            margin-bottom: 20px;
+        }
+
+        #scene-disclaimer p {
+            color: #382821;
+            font-size: 2.1em;
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        .next-btn-text {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 15px 40px;
+            background-color: #8d2d2d;
+            color: white;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .next-btn-text:hover { transform: scale(1.05); }
+
+        @media (max-width: 600px) {
+            #scene-disclaimer .content-box { padding: 20px; }
+            #scene-disclaimer h1 { font-size: 1.5em; }
+            #scene-disclaimer p { font-size: 1em; }
+        }
+
+        /* ================= 4. 名字輸入樣式 ================= */
+        #scene-name-input {
+            background-image: url('All_assets/4名字.jpg');
+        }
+
+        #scene-name-input .container {
+            width: 90%;
+            max-width: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            height: 100%;
+        }
+
+        #scene-name-input .input-bar {
+            width: 100%;
+            height: 60px;
+            background-color: rgba(255,255,255,0);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            margin-top: 90px;
+        }
+
+        #scene-name-input input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 36px;
+            outline: none;
+            color: #333;
+            text-align: center;
+        }
+
+        .nav-btn {
+            position: absolute;
+            bottom: -40px;
+            width: 420px;
+            height: 420px;
+            background: url('All_assets/按鈕.png') no-repeat center center;
+            background-size: contain;
+            border: none;
+            cursor: pointer;
+            font-size: 42px;
+            color: #fff;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: transparent;
+            transition: transform 0.2s ease;
+            z-index: 100;
+        }
+        .nav-btn.left { left: 50px; }
+        .nav-btn.right { right: 50px; }
+        .nav-btn:hover { transform: scale(1.1); }
+        .nav-btn:active { transform: scale(0.95); }
+
+        @media (max-width: 600px) {
+            .nav-btn { width: 120px; height: 120px; font-size: 20px; bottom: 10px;}
+            #scene-name-input input { font-size: 24px; }
+        }
+
+        /* ================= 5. 詐騙方式選擇 ================= */
+        #scene-scam-choice {
+            background-image: url('All_assets/5詐騙方式背景圖.jpeg');
+        }
+
+        .scam-title {
+            font-size: clamp(2rem, 4vw, 4.4rem);
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #3e2f1c;
+        }
+
+        .scam-options {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .scam-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            width: 480px;
+            height: 480px;
+            transition: transform 0.2s ease;
+        }
+        .scam-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .scam-btn span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 2.4rem;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        .scam-btn:hover { transform: scale(1.05); }
+        .scam-btn.selected { transform: scale(1.15); filter: drop-shadow(0 0 15px rgba(141, 45, 45, 0.6)); }
+
+        /* ================= 6. 角色選擇 ================= */
+        #scene-char-select {
+            background-color: #e0dcd7;
+            color: #4a3e3c;
+            min-height: 100vh;
+            padding: 0;
+            box-sizing: border-box;
+            overflow-x: hidden; 
+            overflow-y: hidden; 
+            position: relative;
+            background-image: url('All_assets/5詐騙方式背景圖.jpeg');
+        }
+
+        #scene-char-select.active {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        #scene-char-select .main-container {
+            position: relative;
+            width: 100%; 
+            height: 90vh; 
+            min-height: 600px;
+            display: flex;
+            max-width: 900px;
+            margin: 0 auto; 
+            align-items: center;
+        }
+
+        #scene-char-select .character-selector {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        #scene-char-select .title {
+            position: absolute;
+            top: 2%; 
+            left: -30%; 
+            font-size: clamp(44px, 4.6vw, 64px);
+            font-weight: bold;
+            color: #5d4a46;
+            line-height: 1.2;
+        }
+
+        #scene-char-select .center-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #scene-char-select .character-and-controls {
+            position: relative; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-top: -50px; 
+        }
+
+        #scene-char-select .character-image {
+            max-width: 550px;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            transition: all 0.3s ease-out;
+            margin: 0 100px;
+        }
+
+        #scene-char-select .side-btn {
+            position: absolute;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 10;
+            padding: 0;
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out; 
+        }
+        #scene-char-select .side-btn:hover {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+        #scene-char-select .side-btn:active {
+            transform: scale(0.9);
+            opacity: 1;
+        }
+
+        #scene-char-select #prevCharacterBtn { left: 0; }
+        #scene-char-select #nextCharacterBtn_Simulated { right: 0; }
+
+        #scene-char-select .side-btn img {
+            width: 120px; 
+            height: auto;
+        }
+
+        #scene-char-select .right-sidebar {
+            position: absolute; 
+            top: -5%; 
+            right: -150px; 
+            width: 800px;
+            height: auto; 
+            min-height: 900px; 
+            z-index: 5; 
+        }
+
+        #scene-char-select .info-box-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%; 
+        }
+
+        #scene-char-select .info-box-background {
+            width: 90%;
+            height: 90%; 
+            display: block;
+            object-fit: fill; 
+            z-index: 1;
+        }
+
+        #scene-char-select .info-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            padding: 150px 5px 20px 260px; 
+            box-sizing: border-box;
+            line-height: 1.8;
+            font-size: clamp(30px, 3.4vw, 38px); 
+        }
+
+        #scene-char-select .info-content p {
+            margin-bottom: 0.5em; 
+            margin-top: 0.5em; 
+            margin-left: 0.2em;
+        }
+        #scene-char-select .info-content p:nth-child(2) {
+            margin-bottom: 2em;
+        }
+
+        #scene-char-select .info-content .section-title {
+            font-size: clamp(24px, 2.6vw, 32px);
+            font-weight: bold;
+            position: absolute;
+            top: 120px; 
+            left: 70px; 
+            line-height: 1;
+        }
+        
+        #scene-char-select .sidebar { display: none; }
+
+        @media (max-width: 992px) {
+            #scene-char-select.active {
+                display: block; 
+                overflow-y: auto; 
+            }
+            #scene-char-select .main-container {
+                position: static;
+                max-width: 100%;
+                height: auto;
+                min-height: 0;
+                margin: 0;
+                padding: 20px 0;
+                flex-direction: column;
+            }
+            #scene-char-select .character-selector {
+                position: static;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+            }
+            #scene-char-select .title {
+                position: static;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            #scene-char-select .center-area {
+                position: static;
+                width: 100%;
+                margin-bottom: 30px;
+                flex-direction: column;
+            }
+            #scene-char-select .character-and-controls {
+                margin-top: 0;
+            }
+            #scene-char-select .right-sidebar {
+                position: static;
+                width: 90%;
+                max-width: 450px;
+                margin: 0 auto;
+                transform: none;
+                min-height: auto;
+            }
+            #scene-char-select .info-box-wrapper {
+                transform: none;
+                padding-top: 0;
+                margin-top: 30px;
+            }
+            #scene-char-select .info-content {
+                padding: 50px 30px 20px 70px; 
+                font-size: 16px;
+            }
+            #scene-char-select .bottom-controls {
+                position: static;
+                transform: none;
+                margin: 30px auto;
+                justify-content: space-around;
+                width: 90%;
+                gap: 30px;
+                padding: 0;
+            }
+
+        }
+
+                /* ================= 6.5 任務說明頁面樣式 (新增) ================= */
+        #scene-mission {
+            background-image: url('All_assets/7任務背景.jpg');
+            background-size: cover;
+            background-position: center;
+            display: none; /* 預設隱藏 */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #scene-mission.active {
+            display: flex;
+        }
+
+        #scene-mission .content-box {
+            /* 模仿 mission.html 的樣式並做優化 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        #scene-mission h1 {
+            font-size: clamp(2.5rem, 5vw, 3.8rem);
+            color: #5d4a46;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        #scene-mission p {
+            font-size: clamp(1.2rem, 3vw, 2.1rem);
+            line-height: 1.8;
+            color: #333;
+            text-align: left;
+            margin-bottom: 40px;
+            white-space: pre-wrap; /* 保留換行 */
+            width: 100%;
+        }
+
+        /* 任務頁面的按鈕樣式 */
+        /* #scene-mission .mission-next-btn { 
+            position: relative;
+            width: 300px;
+            height: 100px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #scene-mission .mission-next-btn:hover {
+            transform: scale(1.05);
+        }
+
+        #scene-mission .mission-next-btn img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 1;
+        }
+
+        #scene-mission .mission-next-btn span {
+            position: relative;
+            z-index: 2;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+        } */
+        
+        /* 7. 過場 (GIF) 樣式 */
+        .scene-outro-anim {
+            background-color: #e0dcd7;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .scene-outro-anim img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .hidden-btn {
+    display: none !important;
+    pointer-events: none;
+}
