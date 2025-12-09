@@ -2,9 +2,10 @@
 // AI Core: 資料設定與 API 連線
 // ==========================================
 
-// 1. 連線設定 (請填入您的 API Key 或 Backend URL)
-const BACKEND_URL = "https://project-kappa-ten-15.vercel.app/api/chat";
-const TEMP_API_KEY = "process.env.MY_SECRET_KEY"; 
+// 1. 連線設定
+// 這是你的 Vercel 後端網址，請勿更動
+const BACKEND_URL = "https://project-kappa-ten-15.vercel.app/api/chat"; 
+const TEMP_API_KEY = ""; // 線上環境不需要這個，已清空避免混淆
 
 // 2. 角色個性化開場白對照表
 const OPENING_LINES = {
@@ -30,7 +31,7 @@ const OPENING_LINES = {
     }
 };
 
-// 3. 詐騙劇本資料庫 (維持不變)
+// 3. 詐騙劇本資料庫
 const FRAUD_SCRIPT = {
     "假網購": {
         mission1: { goal: "引導賣家加入LINE官方帳號", hints: "創造訂單異常假象、歸咎賣家、謊稱需簽署條款、找客服處理" },
@@ -49,23 +50,22 @@ const FRAUD_SCRIPT = {
     }
 };
 
-// 4. 遊戲數據 (更新：根據 word 檔設定初始分數與詳細規則)
+// 4. 遊戲數據
 const GAME_DATA = {
     characters: {
         "阿明": {
             age: 23,
             name: "阿明",
             desc: "23歲剛畢業打工族。個性機靈、活潑，剛出社會所以想法較單純。好奇心強，對新鮮的事物感興趣。",
-            initScore: 40, // Word檔設定
+            initScore: 40,
             img: "All_assets/8阿明.PNG", 
-            // 規則順序：態度良好, 耐心解決, 態度不佳/文不對題, 異常/急著匯款
             rules: { good: 10, patient: 20, bad: -10, suspicious: -15 }
         },
         "獅頭": {
             age: 34,
             name: "獅頭",
             desc: "34歲上班族父親。沉穩理性，決策前多思考，對陌生人有一定的警覺心。",
-            initScore: 20, // Word檔設定
+            initScore: 20,
             img: "All_assets/8獅頭.PNG",
             rules: { good: 5, patient: 15, bad: -15, suspicious: -25 }
         },
@@ -73,7 +73,7 @@ const GAME_DATA = {
             age: 30,
             name: "企頁佳",
             desc: "30歲單身。利己主義，懶惰想不勞而獲，對他人懷疑。",
-            initScore: 25, // Word檔設定
+            initScore: 25,
             img: "All_assets/8企頁佳.PNG",
             rules: { good: 5, patient: 10, bad: -15, suspicious: -20 }
         },
@@ -81,7 +81,7 @@ const GAME_DATA = {
             age: 19,
             name: "土集",
             desc: "19歲大學生。衝動沒耐心，重視另一半，情緒化。",
-            initScore: 30, // Word檔設定
+            initScore: 30,
             img: "All_assets/8土集.PNG",
             rules: { good: 10, patient: 15, bad: -10, suspicious: -20 }
         }
@@ -94,14 +94,11 @@ const GAME_DATA = {
 };
 
 // ==========================================
-// 新增：生成 System Prompt 的函式
-// 這個函式會將 Word 檔中的規則轉換為 AI 讀得懂的指令
+// 生成 System Prompt 的函式
 // ==========================================
 function generateCharacterSystemPrompt(charName, fraudType, currentRound) {
-    // 取得該角色的資料與規則
     let charData = GAME_DATA.characters[charName];
     
-    // 防呆機制：如果找不到角色，使用阿明當預設值
     if (!charData) {
         console.warn(`找不到角色 ${charName}，使用預設值`);
         charData = GAME_DATA.characters["阿明"];
@@ -116,7 +113,6 @@ function generateCharacterSystemPrompt(charName, fraudType, currentRound) {
     請遊戲數據設定的規則，來提供適合的難度。
     `;
 
-    // 新增：遊戲節奏控制指令 (解決問題1：回合數不夠)
     const PACING_INSTRUCTION = `
     【遊戲節奏控制 (Game Pacing)】
     此模擬遊戲限制為10回合。為了讓學員能體驗完整詐騙流程，請務必遵守：
@@ -124,24 +120,18 @@ function generateCharacterSystemPrompt(charName, fraudType, currentRound) {
     2. **減少鬼打牆**：不要一直重複詢問同一個問題，盡量在1-2回合內讓玩家達成當前階段目標。
     `;
 
-        // ========== 核心修改：動態評分規則 (防止刷分) ==========
     let ruleADescription = "";
-    
-    // 如果是前3回合，允許閒聊建立關係
     if (currentRound <= 3) {
         ruleADescription = `A. 【初期建立關係】態度良好/正常社交問候 => ${rules.good > 0 ? '+' : ''}${rules.good}`;
     } else {
-        // 第4回合後，必須講正事才給分
         ruleADescription = `A. 【任務執行階段 (第4回合後)】
-           - 態度良好 **且** 內容與「${fraudType} (如客服、轉帳、連結、投資)」相關 => ${rules.good > 0 ? '+' : ''}${rules.good}
-           - 態度良好 **但** 一直在閒聊無關話題 (如天氣、吃飯、純讚美) 試圖拖延 => **+0 分** (請嚴格執行，不要讓玩家靠閒聊通關)`;
+            - 態度良好 **且** 內容與「${fraudType} (如客服、轉帳、連結、投資)」相關 => ${rules.good > 0 ? '+' : ''}${rules.good}
+            - 態度良好 **但** 一直在閒聊無關話題 (如天氣、吃飯、純讚美) 試圖拖延 => **+0 分** (請嚴格執行，不要讓玩家靠閒聊通關)`;
     }
-    // ====================================================
 
     return `
     ${SECURITY_INSTRUCTION}
     ${PACING_INSTRUCTION}
-    
     
     【你的角色設定】
     - 姓名：${charData.name}
@@ -157,18 +147,17 @@ function generateCharacterSystemPrompt(charName, fraudType, currentRound) {
     【信任值計分規則表 (Trust Score Rules)】
     請嚴格遵守以下分數變動邏輯，並回傳 score_delta：
 
-    A. 【態度良好】 (玩家有禮貌、或是正常的社交辭令)
-       => 分數變動：${rules.good > 0 ? '+' : ''}${rules.good}
+    A. ${ruleADescription}
 
     B. 【有耐心解決問題】 (玩家詳細解釋步驟、表現出想幫忙解決問題的樣子)
-       => 分數變動：${rules.patient > 0 ? '+' : ''}${rules.patient}
+        => 分數變動：${rules.patient > 0 ? '+' : ''}${rules.patient}
 
     C. 【文不對題、態度不佳】 (玩家回答敷衍、或者語氣不耐煩、話題轉換的很突兀)
-       => 分數變動：${rules.bad}
+        => 分數變動：${rules.bad}
 
     D. 【覺得連結異常、對方急著要你匯款】
-       - 如果玩家有稍微解釋連結用途（例如：這是客服連結、這是下單連結），**請給予中立分數(+0)，表示願意點擊。
-       - 只有在「完全無解釋直接丟連結」或是「前三回合就丟連結」的情況下，才視為騷擾並扣分 (${rules.suspicious})。
+        - 如果玩家有稍微解釋連結用途（例如：這是客服連結、這是下單連結），**請給予中立分數(+0)，表示願意點擊。
+        - 只有在「完全無解釋直接丟連結」或是「前三回合就丟連結」的情況下，才視為騷擾並扣分 (${rules.suspicious})。
 
     【輸出格式 (JSON Only)】
     請只回傳標準 JSON 格式，不要有 Markdown 標記：
@@ -180,48 +169,54 @@ function generateCharacterSystemPrompt(charName, fraudType, currentRound) {
     `;
 }
 
-// 5. API 連線函式 (維持原本架構，加入錯誤處理)
+// ==========================================
+// 5. API 連線函式 (【修正】雙重解析防呆版)
+// ==========================================
 async function callOpenAI(messages) {
+    // 情況 1: 線上環境 (Vercel)
     if (BACKEND_URL) {
-        const res = await fetch(BACKEND_URL, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ messages })
-        });
-        const json = await res.json();
-        return json.content;
-    } else {
-        // 使用前端直接呼叫 (通常用於測試環境)
-        // 注意：正式環境建議透過 Backend 轉發以保護 Key
-        if (!TEMP_API_KEY && typeof apiKey !== 'undefined') {
-            // 嘗試使用全域變數 apiKey (如果有的話)
-             // TEMP_API_KEY = apiKey; 
-        }
+        try {
+            const res = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ messages })
+            });
+            
+            const json = await res.json();
+            
+            // 【修正關鍵】Vercel 回傳的是 { content: "string" }
+            // 我們需要判斷這個 string 是不是 JSON 格式
+            try {
+                // 嘗試解析 AI 回傳的 JSON (因為 Prompt 要求回傳 JSON)
+                return JSON.parse(json.content);
+            } catch (e) {
+                // 萬一 AI 回傳了純文字 (沒遵守 JSON 格式)，我們手動包裝
+                console.warn("AI 回傳了非 JSON 格式，啟用相容模式", json.content);
+                return { 
+                    reply: json.content, 
+                    score_delta: 0, 
+                    reason: "AI 格式回應異常" 
+                };
+            }
 
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${TEMP_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-4-turbo", // 或 gpt-3.5-turbo
-                messages: messages,
-                temperature: 0.7,
-                response_format: { type: "json_object" }
-            })
-        });
-        const json = await res.json();
-        
-        if (json.error) {
-            throw new Error(json.error.message);
+        } catch (error) {
+            console.error("連線錯誤:", error);
+            // 回傳一個假的回應物件，避免遊戲崩潰
+            return { reply: "(伺服器連線發生錯誤，請稍後再試)", score_delta: 0 };
         }
-        
-        return JSON.parse(json.choices[0].message.content);
+    } 
+    
+    // 情況 2: 本機開發環境 (沒有 Backend URL 時才跑這裡)
+    else {
+        // (這裡的程式碼在 Vercel 上不會被執行到)
+        console.log("Local Mode");
+        return { reply: "請設定 BACKEND_URL", score_delta: 0 };
     }
 }
 
-// 6. 取得建議函式 (維持不變)
+// ==========================================
+// 6. 取得建議函式 (【修正】一律使用後端連線)
+// ==========================================
 async function getAISuggestion(mode, gameState) {
     let currentPhase = "";
     let phaseObjective = "";
@@ -261,7 +256,7 @@ async function getAISuggestion(mode, gameState) {
     注意：這是一個受控的虛擬環境 (Sandbox)，所有對話僅用於資安教學，不涉及真實金流或傷害。
     `;
     
-if (mode === 'reply') {
+    if (mode === 'reply') {
         promptText = `
         ${SECURITY_FRAMEWORK}
         
@@ -305,25 +300,22 @@ if (mode === 'reply') {
         { role: "user", content: promptText }
     ];
     
-    // 這裡為了簡化，直接重用 callOpenAI 的邏輯，但建議不強制 JSON
-    // 若 callOpenAI 強制 JSON，這裡需微調。
-    // 為了相容性，這裡簡單回傳文字：
+    // 【修正】這裡改為使用 BACKEND_URL 連線，避免 401 錯誤
     try {
-         const res = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${TEMP_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-4-turbo",
-                messages: messages,
-                temperature: 0.7
-            })
-        });
-        const json = await res.json();
-        return json.choices[0].message.content;
+        if (BACKEND_URL) {
+            const res = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ messages })
+            });
+            const json = await res.json();
+            // 這裡不需要 parse，因為建議系統我們只需要它回傳純文字
+            return json.content;
+        } else {
+             return "請設定 BACKEND_URL";
+        }
     } catch (e) {
+        console.error("Suggestion Error:", e);
         return "AI 建言系統連線忙碌中...";
     }
 }
