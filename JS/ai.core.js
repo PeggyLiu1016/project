@@ -4,7 +4,7 @@
 
 // 1. 連線設定 (請填入您的 API Key 或 Backend URL)
 const BACKEND_URL = null; 
-const TEMP_API_KEY = ""; // 這裡請留空，執行環境會自動填入，或者您手動填入
+const TEMP_API_KEY = "process.env.MY_SECRET_KEY"; 
 
 // 2. 角色個性化開場白對照表
 const OPENING_LINES = {
