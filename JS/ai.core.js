@@ -189,7 +189,7 @@ async function callOpenAI(messages) {
             body: JSON.stringify({ messages })
         });
         const json = await res.json();
-        return JSON.parse(json.content);
+        return json.content;
     } else {
         // 使用前端直接呼叫 (通常用於測試環境)
         // 注意：正式環境建議透過 Backend 轉發以保護 Key
