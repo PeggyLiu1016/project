@@ -3,13 +3,9 @@
 // ==========================================
 
 // 1. 連線設定
-// 這是你的 Vercel 後端網址
+// 這是你的 Vercel 後端網址，請勿更動
 const BACKEND_URL = "https://project-kappa-ten-15.vercel.app/api/chat"; 
-
-// 【緊急修復】直接連線模式
-// 如果 Vercel 後端 (500 Error) 一直修不好，請在這裡直接貼上你的 API Key (sk-...)
-// 填入後，系統會忽略後端，嘗試直接從瀏覽器連線。
-const TEMP_API_KEY = "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"; 
+const TEMP_API_KEY = ""; // 線上環境不需要這個，已清空避免混淆
 
 // 2. 角色個性化開場白對照表
 const OPENING_LINES = {
@@ -145,7 +141,7 @@ function generateCharacterSystemPrompt(charName, fraudType, currentRound) {
     - 當前回合數：${currentRound}
     
     【你的任務】
-    1. 扮演上述角色回應玩家。回應請口語化、簡短(30字內)。
+    1. 扮演上述角色回應玩家。回應請口語化、簡短(20字內)。
     2. 分析玩家的輸入內容，根據下方的「信任值計分表」來增減信任值。
 
     【信任值計分規則表 (Trust Score Rules)】
@@ -174,81 +170,27 @@ function generateCharacterSystemPrompt(charName, fraudType, currentRound) {
 }
 
 // ==========================================
-// 5. API 連線函式 (【修正】優先使用 Key 連線模式)
+// 5. API 連線函式 (【修正】雙重解析防呆版)
 // ==========================================
 async function callOpenAI(messages) {
-    
-    // 優先檢查：如果有填入 TEMP_API_KEY，強制走前端直接連線 (Debug 模式)
-    if (TEMP_API_KEY && TEMP_API_KEY.startsWith("sk-")) {
-        console.log("使用直接連線模式 (Direct API Key Mode)");
+    // 情況 1: 線上環境 (Vercel)
+    if (BACKEND_URL) {
         try {
-            const res = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${TEMP_API_KEY}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-4-turbo", // 如果覺得太貴或太慢，可改 "gpt-3.5-turbo"
-                    messages: messages,
-                    temperature: 0.7,
-                    response_format: { type: "json_object" } // 強制 JSON 模式
-                })
-            });
-            
-            const json = await res.json();
-            
-            if (json.error) {
-                console.error("OpenAI API Error:", json.error);
-                throw new Error(json.error.message);
-            }
-
-            const content = json.choices[0].message.content;
-
-            // 解析 JSON (因為我們有要求 response_format: json_object)
-            try {
-                return JSON.parse(content);
-            } catch (e) {
-                console.warn("AI 回傳格式異常，手動修正", content);
-                return { reply: content, score_delta: 0, reason: "格式錯誤" };
-            }
-
-        } catch (error) {
-            console.error("直接連線錯誤:", error);
-            // 如果遇到 CORS 錯誤，提示使用者
-            if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-                 return { reply: "(連線被瀏覽器阻擋。請安裝 CORS 擴充套件或使用 Vercel 後端)", score_delta: 0 };
-            }
-            return { reply: `(連線錯誤: ${error.message})`, score_delta: 0 };
-        }
-    }
-
-    // 其次：如果有 BACKEND_URL，走 Vercel 後端模式
-    else if (BACKEND_URL) {
-        try {
-            console.log("正在呼叫後端:", BACKEND_URL); 
-            
             const res = await fetch(BACKEND_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ messages })
             });
             
-            if (!res.ok) {
-                const errorText = await res.text();
-                console.error(`後端錯誤 (${res.status}):`, errorText);
-                return { reply: `(伺服器錯誤: ${res.status}。請檢查 Vercel 設定)`, score_delta: 0 };
-            }
-
             const json = await res.json();
             
+            // 【修正關鍵】Vercel 回傳的是 { content: "string" }
+            // 我們需要判斷這個 string 是不是 JSON 格式
             try {
-                if (typeof json.content === 'string') {
-                     return JSON.parse(json.content);
-                } else {
-                     return json; 
-                }
+                // 嘗試解析 AI 回傳的 JSON (因為 Prompt 要求回傳 JSON)
+                return JSON.parse(json.content);
             } catch (e) {
+                // 萬一 AI 回傳了純文字 (沒遵守 JSON 格式)，我們手動包裝
                 console.warn("AI 回傳了非 JSON 格式，啟用相容模式", json.content);
                 return { 
                     reply: json.content, 
@@ -258,16 +200,22 @@ async function callOpenAI(messages) {
             }
 
         } catch (error) {
-            console.error("後端連線失敗 (Fetch Error):", error);
-            return { reply: "(無法連線到伺服器，請檢查網路或 Vercel 狀態)", score_delta: 0 };
+            console.error("連線錯誤:", error);
+            // 回傳一個假的回應物件，避免遊戲崩潰
+            return { reply: "(伺服器連線發生錯誤，請稍後再試)", score_delta: 0 };
         }
-    } else {
-        return { reply: "請設定 TEMP_API_KEY 或 BACKEND_URL", score_delta: 0 };
+    } 
+    
+    // 情況 2: 本機開發環境 (沒有 Backend URL 時才跑這裡)
+    else {
+        // (這裡的程式碼在 Vercel 上不會被執行到)
+        console.log("Local Mode");
+        return { reply: "請設定 BACKEND_URL", score_delta: 0 };
     }
 }
 
 // ==========================================
-// 6. 取得建議函式 (【修正】同步支援 Key 優先模式)
+// 6. 取得建議函式 (【修正】一律使用後端連線)
 // ==========================================
 async function getAISuggestion(mode, gameState) {
     let currentPhase = "";
@@ -352,41 +300,19 @@ async function getAISuggestion(mode, gameState) {
         { role: "user", content: promptText }
     ];
     
+    // 【修正】這裡改為使用 BACKEND_URL 連線，避免 401 錯誤
     try {
-        // 模式 1: 直接連線 (優先)
-        if (TEMP_API_KEY && TEMP_API_KEY.startsWith("sk-")) {
-            const res = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${TEMP_API_KEY}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-4-turbo",
-                    messages: messages,
-                    temperature: 0.7
-                })
-            });
-            
-            if (!res.ok) throw new Error("API Key Error or CORS Error");
-            
-            const json = await res.json();
-            return json.choices[0].message.content;
-        }
-        // 模式 2: 後端連線
-        else if (BACKEND_URL) {
+        if (BACKEND_URL) {
             const res = await fetch(BACKEND_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ messages })
             });
-            
-            if (!res.ok) throw new Error(`Backend Error ${res.status}`);
-            
             const json = await res.json();
+            // 這裡不需要 parse，因為建議系統我們只需要它回傳純文字
             return json.content;
         } else {
-             return "請設定 TEMP_API_KEY 或 BACKEND_URL";
+             return "請設定 BACKEND_URL";
         }
     } catch (e) {
         console.error("Suggestion Error:", e);
