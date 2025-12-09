@@ -1,9 +1,12 @@
 import OpenAI from 'openai';
 
 // Vercel 會自動從後台設定讀取這個變數，程式碼裡不用寫死
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+//const openai = new OpenAI({
+  //apiKey: process.env.OPENAI_API_KEY,
+//});
+
+const BACKEND_URL = "https://project-kappa-ten-15.vercel.app/api/chat"; 
+
 
 // 這是 Vercel Serverless Function 的標準寫法
 export default async function handler(req, res) {
