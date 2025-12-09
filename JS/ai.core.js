@@ -6,10 +6,10 @@
 // 這是你的 Vercel 後端網址
 const BACKEND_URL = "https://project-kappa-ten-15.vercel.app/api/chat"; 
 
-// 【重要】請保持為空字串 ""
-// 原因：瀏覽器會因為 CORS 安全政策，禁止網頁直接連線到 OpenAI。
-// 我們必須透過上面的 BACKEND_URL (Vercel) 來幫我們轉送請求。
-const TEMP_API_KEY = ""; 
+// 【緊急修復】直接連線模式
+// 如果 Vercel 後端 (500 Error) 一直修不好，請在這裡直接貼上你的 API Key (sk-...)
+// 填入後，系統會忽略後端，嘗試直接從瀏覽器連線。
+const TEMP_API_KEY = "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"; 
 
 // 2. 角色個性化開場白對照表
 const OPENING_LINES = {
@@ -174,19 +174,59 @@ function generateCharacterSystemPrompt(charName, fraudType, currentRound) {
 }
 
 // ==========================================
-// 5. API 連線函式 (【修正】回歸 Vercel 後端模式)
+// 5. API 連線函式 (【修正】優先使用 Key 連線模式)
 // ==========================================
 async function callOpenAI(messages) {
     
-    // 防呆：如果還有填 TEMP_API_KEY，提示使用者清空
+    // 優先檢查：如果有填入 TEMP_API_KEY，強制走前端直接連線 (Debug 模式)
     if (TEMP_API_KEY && TEMP_API_KEY.startsWith("sk-")) {
-        console.warn("偵測到 TEMP_API_KEY，但直接連線會被瀏覽器阻擋 (CORS)。請清空 Key 並使用 Backend URL。");
+        console.log("使用直接連線模式 (Direct API Key Mode)");
+        try {
+            const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${TEMP_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-4-turbo", // 如果覺得太貴或太慢，可改 "gpt-3.5-turbo"
+                    messages: messages,
+                    temperature: 0.7,
+                    response_format: { type: "json_object" } // 強制 JSON 模式
+                })
+            });
+            
+            const json = await res.json();
+            
+            if (json.error) {
+                console.error("OpenAI API Error:", json.error);
+                throw new Error(json.error.message);
+            }
+
+            const content = json.choices[0].message.content;
+
+            // 解析 JSON (因為我們有要求 response_format: json_object)
+            try {
+                return JSON.parse(content);
+            } catch (e) {
+                console.warn("AI 回傳格式異常，手動修正", content);
+                return { reply: content, score_delta: 0, reason: "格式錯誤" };
+            }
+
+        } catch (error) {
+            console.error("直接連線錯誤:", error);
+            // 如果遇到 CORS 錯誤，提示使用者
+            if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+                 return { reply: "(連線被瀏覽器阻擋。請安裝 CORS 擴充套件或使用 Vercel 後端)", score_delta: 0 };
+            }
+            return { reply: `(連線錯誤: ${error.message})`, score_delta: 0 };
+        }
     }
 
-    // 標準模式：使用 BACKEND_URL (Vercel 後端)
-    if (BACKEND_URL) {
+    // 其次：如果有 BACKEND_URL，走 Vercel 後端模式
+    else if (BACKEND_URL) {
         try {
-            console.log("正在呼叫後端:", BACKEND_URL); // Debug 訊息
+            console.log("正在呼叫後端:", BACKEND_URL); 
             
             const res = await fetch(BACKEND_URL, {
                 method: 'POST',
@@ -194,23 +234,18 @@ async function callOpenAI(messages) {
                 body: JSON.stringify({ messages })
             });
             
-            // 檢查後端是否正常回應 (例如 404 或 500)
             if (!res.ok) {
                 const errorText = await res.text();
                 console.error(`後端錯誤 (${res.status}):`, errorText);
-                return { reply: `(伺服器錯誤: ${res.status}。請檢查 Vercel Logs)`, score_delta: 0 };
+                return { reply: `(伺服器錯誤: ${res.status}。請檢查 Vercel 設定)`, score_delta: 0 };
             }
 
             const json = await res.json();
             
-            // 處理後端回傳的資料
             try {
-                // 如果後端回傳的是字串 (因為 Prompt 要求回傳 JSON)，我們在這裡解析它
-                // Vercel 後端目前回傳結構是: { content: "AI的原始回應字串" }
                 if (typeof json.content === 'string') {
                      return JSON.parse(json.content);
                 } else {
-                     // 如果後端已經幫忙解析好了 (預防性)
                      return json; 
                 }
             } catch (e) {
@@ -227,12 +262,12 @@ async function callOpenAI(messages) {
             return { reply: "(無法連線到伺服器，請檢查網路或 Vercel 狀態)", score_delta: 0 };
         }
     } else {
-        return { reply: "請設定 BACKEND_URL", score_delta: 0 };
+        return { reply: "請設定 TEMP_API_KEY 或 BACKEND_URL", score_delta: 0 };
     }
 }
 
 // ==========================================
-// 6. 取得建議函式
+// 6. 取得建議函式 (【修正】同步支援 Key 優先模式)
 // ==========================================
 async function getAISuggestion(mode, gameState) {
     let currentPhase = "";
@@ -318,17 +353,40 @@ async function getAISuggestion(mode, gameState) {
     ];
     
     try {
-        if (BACKEND_URL) {
+        // 模式 1: 直接連線 (優先)
+        if (TEMP_API_KEY && TEMP_API_KEY.startsWith("sk-")) {
+            const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${TEMP_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-4-turbo",
+                    messages: messages,
+                    temperature: 0.7
+                })
+            });
+            
+            if (!res.ok) throw new Error("API Key Error or CORS Error");
+            
+            const json = await res.json();
+            return json.choices[0].message.content;
+        }
+        // 模式 2: 後端連線
+        else if (BACKEND_URL) {
             const res = await fetch(BACKEND_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ messages })
             });
+            
+            if (!res.ok) throw new Error(`Backend Error ${res.status}`);
+            
             const json = await res.json();
-            // 這裡不需要 parse，因為建議系統我們只需要它回傳純文字
             return json.content;
         } else {
-             return "請設定 BACKEND_URL";
+             return "請設定 TEMP_API_KEY 或 BACKEND_URL";
         }
     } catch (e) {
         console.error("Suggestion Error:", e);
