@@ -26,7 +26,7 @@ exports.chatWithGPT = functions.https.onRequest((req, res) => {
             const { messages } = req.body;
 
             const completion = await openai.chat.completions.create({
-                model: "gpt-3.5-turbo",
+                model: "gpt-4-turbo",
                 messages: messages,
                 temperature: 0.7,
                 // 強制回傳 JSON 格式以利前端分析分數
