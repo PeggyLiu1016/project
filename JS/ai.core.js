@@ -5,7 +5,7 @@
 // 1. 連線設定
 // 這是你的 Vercel 後端網址，請勿更動
 const BACKEND_URL = "https://project-kappa-ten-15.vercel.app/api/chat"; 
-const TEMP_API_KEY = ""; // 線上環境不需要這個，已清空避免混淆
+const TEMP_API_KEY = "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"; // 線上環境不需要這個，已清空避免混淆
 
 // 2. 角色個性化開場白對照表
 const OPENING_LINES = {
